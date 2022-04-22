@@ -20,23 +20,23 @@ func anyToString(val Any) string {
 	case bool:
 		sv = strconv.FormatBool(v)
 	case Map:
-		d, e := chef.JSONEncode(v)
+		d, e := chef.MarshalJSON(v)
 		if e == nil {
-			sv = string(d.([]byte))
+			sv = string(d)
 		} else {
 			sv = "{}"
 		}
 	case []Map:
-		d, e := chef.JSONEncode(v)
+		d, e := chef.MarshalJSON(v)
 		if e == nil {
-			sv = string(d.([]byte))
+			sv = string(d)
 		} else {
 			sv = "[]"
 		}
 	case []int, []int8, []int16, []int32, []int64, []float32, []float64, []string, []bool, []Any:
-		d, e := chef.JSONEncode(v)
+		d, e := chef.MarshalJSON(v)
 		if e == nil {
-			sv = string(d.([]byte))
+			sv = string(d)
 		} else {
 			sv = "[]"
 		}

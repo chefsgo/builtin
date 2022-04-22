@@ -20,17 +20,27 @@ import (
 var (
 	errInvalidData = errors.New("Invalid data.")
 
-	codecConfig = chef.CodecConfig()
-
-	jsonCodec jsoniter.API = jsoniter.ConfigCompatibleWithStandardLibrary
-
-	textCoder     = base64.NewEncoding(codecConfig.Strings)
-	digitCoder, _ = hashids.NewWithData(&hashids.HashIDData{
-		Alphabet: codecConfig.Numbers, Salt: codecConfig.Salt, MinLength: codecConfig.Length,
-	})
+	// textCoder     = base64.NewEncoding(codecConfig.Text)
+	// digitCoder, _ = hashids.NewWithData(&hashids.HashIDData{
+	// 	Alphabet: codecConfig.Digit, Salt: codecConfig.Salt, MinLength: codecConfig.Length,
+	// })
 )
 
 func init() {
+	jsonCodec := jsoniter.ConfigCompatibleWithStandardLibrary
+
+	codecConfig := chef.CodecConfig()
+	textCoder := base64.NewEncoding(codecConfig.Text)
+
+	hd := hashids.NewData()
+	hd.Alphabet = codecConfig.Digit
+	hd.Salt = codecConfig.Salt
+	hd.MinLength = codecConfig.Length
+
+	digitCoder, _ := hashids.NewWithData(hd)
+	// digitCoder, _ := hashids.NewWithData(&hashids.HashIDData{
+	// 	Alphabet: codecConfig.Digit, Salt: codecConfig.Salt, MinLength: codecConfig.Length,
+	// })
 
 	gob.Register(time.Now())
 	gob.Register(Map{})
@@ -97,14 +107,15 @@ func init() {
 	}, false)
 
 	chef.Register("base64", chef.Codec{
-		Name: "BASE64加解密", Desc: "BASE64加解密",
+		Alias: []string{"base64std"},
+		Name:  "BASE64加解密", Desc: "BASE64加解密",
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
 			return base64.StdEncoding.EncodeToString([]byte(text)), nil
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			text := anyToString(value)
-			bytes, err := base64.StdEncoding.DecodeString(text)
+			text := anyToString(data)
+			bytes, err := base64.URLEncoding.DecodeString(text)
 			if err != nil {
 				return "", err
 			}
@@ -112,14 +123,30 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("string", chef.Codec{
-		Name: "文本加密", Desc: "文本加密，自定义字符表的base64编码，字典：" + codecConfig.Strings,
+	chef.Register("base64url", chef.Codec{
+		Name: "BASE64url加解密", Desc: "BASE64url加解密",
+		Encode: func(value Any) (Any, error) {
+			text := anyToString(value)
+			return base64.StdEncoding.EncodeToString([]byte(text)), nil
+		},
+		Decode: func(data Any, value Any) (Any, error) {
+			text := anyToString(data)
+			bytes, err := base64.URLEncoding.DecodeString(text)
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+		},
+	}, false)
+
+	chef.Register("text", chef.Codec{
+		Name: "文本加密", Desc: "文本加密，自定义字符表的base64编码，字典：" + codecConfig.Text,
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
 			return textCoder.EncodeToString([]byte(text)), nil
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			text := anyToString(value)
+			text := anyToString(data)
 			bytes, err := textCoder.DecodeString(text)
 			if err != nil {
 				return nil, err
@@ -127,8 +154,8 @@ func init() {
 			return string(bytes), nil
 		},
 	}, false)
-	chef.Register("strings", chef.Codec{
-		Name: "文本数组加密", Desc: "文本数组加密，自定义字符表的base64编码，字典：" + codecConfig.Strings,
+	chef.Register("texts", chef.Codec{
+		Name: "文本数组加密", Desc: "文本数组加密，自定义字符表的base64编码，字典：" + codecConfig.Text,
 		Encode: func(value Any) (Any, error) {
 			text := ""
 			if vvs, ok := value.([]string); ok {
@@ -139,7 +166,7 @@ func init() {
 			return textCoder.EncodeToString([]byte(text)), nil
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			text := anyToString(value)
+			text := anyToString(data)
 			bytes, err := textCoder.DecodeString(text)
 			if err != nil {
 				return nil, err
@@ -148,7 +175,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("number", chef.Codec{
+	chef.Register("digit", chef.Codec{
 		Name: "数字加密", Desc: "数字加密",
 		Encode: func(value Any) (Any, error) {
 			num := int64(0)
@@ -168,7 +195,7 @@ func init() {
 			return digitCoder.EncodeInt64([]int64{num})
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			text := anyToString(value)
+			text := anyToString(data)
 			digits, err := digitCoder.DecodeInt64WithError(text)
 			if err != nil {
 				return nil, err
@@ -180,7 +207,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("numbers", chef.Codec{
+	chef.Register("digits", chef.Codec{
 		Name: "数字数组加密", Desc: "数字数组加密",
 		Encode: func(value Any) (Any, error) {
 			nums := []int64{}
@@ -208,7 +235,7 @@ func init() {
 			return digitCoder.EncodeInt64(nums)
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			text := anyToString(value)
+			text := anyToString(data)
 			return digitCoder.DecodeInt64WithError(text)
 		},
 	}, false)
