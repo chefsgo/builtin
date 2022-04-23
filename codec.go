@@ -14,46 +14,33 @@ import (
 	"github.com/speps/go-hashids/v2"
 
 	. "github.com/chefsgo/base"
-	"github.com/chefsgo/chef"
+	"github.com/chefsgo/codec"
 )
 
 var (
 	errInvalidData = errors.New("Invalid data.")
 
-	// textCoder     = base64.NewEncoding(codecConfig.Text)
-	// digitCoder, _ = hashids.NewWithData(&hashids.HashIDData{
-	// 	Alphabet: codecConfig.Digit, Salt: codecConfig.Salt, MinLength: codecConfig.Length,
-	// })
+	jsonCoder     = jsoniter.ConfigCompatibleWithStandardLibrary
+	textCoder     = base64.NewEncoding(codec.TextAlphabet())
+	digitCoder, _ = hashids.NewWithData(&hashids.HashIDData{
+		Alphabet: codec.DigitAlphabet(), Salt: codec.DigitSalt(), MinLength: codec.DigitLength(),
+	})
 )
 
 func init() {
-	jsonCodec := jsoniter.ConfigCompatibleWithStandardLibrary
-
-	codecConfig := chef.CodecConfig()
-	textCoder := base64.NewEncoding(codecConfig.Text)
-
-	hd := hashids.NewData()
-	hd.Alphabet = codecConfig.Digit
-	hd.Salt = codecConfig.Salt
-	hd.MinLength = codecConfig.Length
-
-	digitCoder, _ := hashids.NewWithData(hd)
-	// digitCoder, _ := hashids.NewWithData(&hashids.HashIDData{
-	// 	Alphabet: codecConfig.Digit, Salt: codecConfig.Salt, MinLength: codecConfig.Length,
-	// })
 
 	gob.Register(time.Now())
 	gob.Register(Map{})
 	gob.Register([]Map{})
 
-	chef.Register("json", chef.Codec{
-		Name: "JSON编解码", Desc: "JSON编解码",
+	codec.Register("json", codec.Codec{
+		Name: "JSON编解码", Text: "JSON编解码",
 		Encode: func(value Any) (Any, error) {
-			return jsonCodec.Marshal(value)
+			return jsonCoder.Marshal(value)
 		},
 		Decode: func(data Any, value Any) (Any, error) {
 			if bytes, ok := data.([]byte); ok {
-				err := jsonCodec.Unmarshal(bytes, value)
+				err := jsonCoder.Unmarshal(bytes, value)
 				if err != nil {
 					return nil, err
 				}
@@ -63,8 +50,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("xml", chef.Codec{
-		Name: "XML编解码", Desc: "XML编解码",
+	codec.Register("xml", codec.Codec{
+		Name: "XML编解码", Text: "XML编解码",
 		Encode: func(value Any) (Any, error) {
 			return xml.Marshal(value)
 		},
@@ -80,8 +67,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("gob", chef.Codec{
-		Name: "GOB编解码", Desc: "GOB编解码",
+	codec.Register("gob", codec.Codec{
+		Name: "GOB编解码", Text: "GOB编解码",
 		Encode: func(value Any) (Any, error) {
 			var buffer bytes.Buffer
 			encoder := gob.NewEncoder(&buffer)
@@ -106,9 +93,9 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("base64", chef.Codec{
+	codec.Register("base64", codec.Codec{
 		Alias: []string{"base64std"},
-		Name:  "BASE64加解密", Desc: "BASE64加解密",
+		Name:  "BASE64加解密", Text: "BASE64加解密",
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
 			return base64.StdEncoding.EncodeToString([]byte(text)), nil
@@ -123,8 +110,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("base64url", chef.Codec{
-		Name: "BASE64url加解密", Desc: "BASE64url加解密",
+	codec.Register("base64url", codec.Codec{
+		Name: "BASE64url加解密", Text: "BASE64url加解密",
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
 			return base64.StdEncoding.EncodeToString([]byte(text)), nil
@@ -139,8 +126,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("text", chef.Codec{
-		Name: "文本加密", Desc: "文本加密，自定义字符表的base64编码，字典：" + codecConfig.Text,
+	codec.Register("text", codec.Codec{
+		Name: "文本加密", Text: "文本加密，自定义字符表的base64编码，字典：" + codec.TextAlphabet(),
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
 			return textCoder.EncodeToString([]byte(text)), nil
@@ -154,8 +141,8 @@ func init() {
 			return string(bytes), nil
 		},
 	}, false)
-	chef.Register("texts", chef.Codec{
-		Name: "文本数组加密", Desc: "文本数组加密，自定义字符表的base64编码，字典：" + codecConfig.Text,
+	codec.Register("texts", codec.Codec{
+		Name: "文本数组加密", Text: "文本数组加密，自定义字符表的base64编码，字典：" + codec.TextAlphabet(),
 		Encode: func(value Any) (Any, error) {
 			text := ""
 			if vvs, ok := value.([]string); ok {
@@ -175,8 +162,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("digit", chef.Codec{
-		Name: "数字加密", Desc: "数字加密",
+	codec.Register("digit", codec.Codec{
+		Name: "数字加密", Text: "数字加密",
 		Encode: func(value Any) (Any, error) {
 			num := int64(0)
 			if vv, ok := value.(int); ok {
@@ -207,8 +194,8 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("digits", chef.Codec{
-		Name: "数字数组加密", Desc: "数字数组加密",
+	codec.Register("digits", codec.Codec{
+		Name: "数字数组加密", Text: "数字数组加密",
 		Encode: func(value Any) (Any, error) {
 			nums := []int64{}
 			if vv, ok := value.(int); ok {
