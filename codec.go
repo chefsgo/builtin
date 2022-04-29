@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,8 @@ import (
 
 	. "github.com/chefsgo/base"
 	"github.com/chefsgo/chef"
+
+	"github.com/BurntSushi/toml"
 )
 
 var (
@@ -33,7 +36,7 @@ func init() {
 	gob.Register(Map{})
 	gob.Register([]Map{})
 
-	chef.Register("json", chef.Codec{
+	chef.Register(chef.JSON, chef.Codec{
 		Name: "JSON编解码", Text: "JSON编解码",
 		Encode: func(value Any) (Any, error) {
 			return jsonCoder.Marshal(value)
@@ -50,7 +53,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("xml", chef.Codec{
+	chef.Register(chef.XML, chef.Codec{
 		Name: "XML编解码", Text: "XML编解码",
 		Encode: func(value Any) (Any, error) {
 			return xml.Marshal(value)
@@ -67,7 +70,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("gob", chef.Codec{
+	chef.Register(chef.GOB, chef.Codec{
 		Name: "GOB编解码", Text: "GOB编解码",
 		Encode: func(value Any) (Any, error) {
 			var buffer bytes.Buffer
@@ -87,6 +90,29 @@ func init() {
 					return nil, err
 				}
 
+				return value, nil
+			}
+			return nil, errInvalidData
+		},
+	}, false)
+
+	chef.Register(chef.TOML, chef.Codec{
+		Name: "toml编解码", Text: "toml编解码",
+		Encode: func(value Any) (Any, error) {
+			var buffer bytes.Buffer
+			encoder := toml.NewEncoder(&buffer)
+			err := encoder.Encode(value)
+			if err != nil {
+				fmt.Println("err", err)
+			}
+			return buffer.Bytes(), nil
+		},
+		Decode: func(data Any, value Any) (Any, error) {
+			if cont, ok := data.(string); ok {
+				_, err := toml.Decode(cont, value)
+				if err != nil {
+					return nil, err
+				}
 				return value, nil
 			}
 			return nil, errInvalidData
@@ -126,7 +152,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("text", chef.Codec{
+	chef.Register(chef.TEXT, chef.Codec{
 		Name: "文本加密", Text: "文本加密，自定义字符表的base64编码，字典：" + chef.TextAlphabet(),
 		Encode: func(value Any) (Any, error) {
 			text := anyToString(value)
@@ -141,7 +167,7 @@ func init() {
 			return string(bytes), nil
 		},
 	}, false)
-	chef.Register("texts", chef.Codec{
+	chef.Register(chef.TEXTS, chef.Codec{
 		Name: "文本数组加密", Text: "文本数组加密，自定义字符表的base64编码，字典：" + chef.TextAlphabet(),
 		Encode: func(value Any) (Any, error) {
 			text := ""
@@ -162,7 +188,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("digit", chef.Codec{
+	chef.Register(chef.DIGIT, chef.Codec{
 		Name: "数字加密", Text: "数字加密",
 		Encode: func(value Any) (Any, error) {
 			num := int64(0)
@@ -194,7 +220,7 @@ func init() {
 		},
 	}, false)
 
-	chef.Register("digits", chef.Codec{
+	chef.Register(chef.DIGITS, chef.Codec{
 		Name: "数字数组加密", Text: "数字数组加密",
 		Encode: func(value Any) (Any, error) {
 			nums := []int64{}
