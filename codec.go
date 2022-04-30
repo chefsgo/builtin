@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -103,13 +102,13 @@ func init() {
 			encoder := toml.NewEncoder(&buffer)
 			err := encoder.Encode(value)
 			if err != nil {
-				fmt.Println("err", err)
+				return nil, err
 			}
 			return buffer.Bytes(), nil
 		},
 		Decode: func(data Any, value Any) (Any, error) {
-			if cont, ok := data.(string); ok {
-				_, err := toml.Decode(cont, value)
+			if cont, ok := data.([]byte); ok {
+				_, err := toml.Decode(string(cont), value)
 				if err != nil {
 					return nil, err
 				}
