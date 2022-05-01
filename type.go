@@ -354,13 +354,8 @@ func init() {
 	chef.Register("int", chef.Type{
 		Name: "整型", Text: "整型",
 		Valid: func(value Any, config Var) bool {
-
 			switch v := value.(type) {
-			case int, int32, int64, int8:
-				{
-					return true
-				}
-			case float32, float64:
+			case int, int32, int64, int8, float32, float64:
 				return true
 			case string:
 				{
@@ -369,33 +364,21 @@ func init() {
 						return true
 					}
 				}
-			default:
 			}
-
 			return false
 		},
 		Value: func(value Any, config Var) Any {
 			switch v := value.(type) {
 			case int:
-				{
-					return int64(v)
-				}
+				return int64(v)
 			case int8:
-				{
-					return int64(v)
-				}
+				return int64(v)
 			case int16:
-				{
-					return int64(v)
-				}
+				return int64(v)
 			case int32:
-				{
-					return int64(v)
-				}
+				return int64(v)
 			case int64:
-				{
-					return int64(v)
-				}
+				return int64(v)
 			case float32:
 				return int64(v)
 			case float64:
@@ -407,8 +390,6 @@ func init() {
 						return i
 					}
 				}
-			default:
-
 			}
 
 			return int64(0)
